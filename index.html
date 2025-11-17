@@ -1,78 +1,35 @@
-<style>
-  /* Basic styles for highlighting */
-  .speech-line {
-    display: block;
-    margin-bottom: 10px;
-    transition: background 0.3s;
-    padding: 2px 5px;
-  }
-  .highlight {
-    background-color: #ffff99; /* yellow highlight */
-  }
-</style>
-
-<div id="voiceTextContainer">
-  <span class="speech-line">Want to ace your Nursing exams?</span>
-  <span class="speech-line">The Nursing Prometric Test is a simulation exam for Nurse Technicians and Nurse Specialists.</span>
-  <span class="speech-line">It contains</span>
-  <span class="speech-line">500</span>
-  <span class="speech-line">questions based on the SMLE and Enclex exams, divided into Easy, Medium, and Hard levels.</span>
-  <span class="speech-line">Each question comes with a detailed rationale to help you understand, learn, and improve your score.</span>
-  <span class="speech-line">Take the demo test for</span>
-  <span class="speech-line">free</span>
-  <span class="speech-line">and unlock the full test with a secure code today!</span>
-</div>
-
 <script>
 window.addEventListener('DOMContentLoaded', () => {
-  const lines = document.querySelectorAll('#voiceTextContainer .speech-line');
-
-  const messages = [
-    { text: "Want to ace your Nursing exams?", pitch: 1.2, rate: 1 },
-    { text: "The Nursing Prometric Test is a simulation exam for Nurse Technicians and Nurse Specialists.", pitch: 1, rate: 1 },
-    { text: "It contains", pitch: 1.1, rate: 1.1 },
-    { text: "500", pitch: 1.5, rate: 0.9 },
-    { text: "questions based on the SMLE and Enclex exams, divided into Easy, Medium, and Hard levels.", pitch: 1.1, rate: 1.1 },
-    { text: "Each question comes with a detailed rationale to help you understand, learn, and improve your score.", pitch: 1, rate: 1 },
-    { text: "Take the demo test for", pitch: 1.2, rate: 1.1 },
-    { text: "free", pitch: 1.5, rate: 0.9 },
-    { text: "and unlock the full test with a secure code today!", pitch: 1.2, rate: 1.1 }
+  const textSegments = [
+    { text: "🩺 Want to ace your Nursing exams?", pause: 500, pitch: 1.2, rate: 1 }, // energetic, excited
+    { text: "The Nursing Prometric Test is a simulation exam for Nurse Technicians and Nurse Specialists.", pause: 500, pitch: 1, rate: 1 }, // confident, clear
+    { text: "It contains", pause: 100, pitch: 1.1, rate: 1.1 }, // motivational
+    { text: "500", pause: 100, pitch: 1.5, rate: 0.9 }, // emphasis
+    { text: "questions based on the SMLE and Enclex exams, divided into Easy, Medium, and Hard levels.", pause: 500, pitch: 1.1, rate: 1.1 },
+    { text: "Each question comes with a detailed rationale to help you understand, learn, and improve your score.", pause: 500, pitch: 1, rate: 1 }, // encouraging
+    { text: "Take the demo test for", pause: 100, pitch: 1.2, rate: 1.1 },
+    { text: "free", pause: 100, pitch: 1.5, rate: 0.9 }, // emphasis
+    { text: "and unlock the full test with a secure code today! 🩺📚", pause: 0, pitch: 1.2, rate: 1.1 } // excited, inviting
   ];
 
-  function speakMessages() {
-    const voices = window.speechSynthesis.getVoices();
-    const voice = voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) || voices[0];
+  const voices = window.speechSynthesis.getVoices();
+  const voice = voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) || voices[0];
 
-    let totalDelay = 0;
+  let delay = 0;
 
-    messages.forEach((msg, index) => {
-      setTimeout(() => {
-        // Highlight the current line
-        lines.forEach(line => line.classList.remove('highlight'));
-        lines[index].classList.add('highlight');
-
-        const utterance = new SpeechSynthesisUtterance(msg.text);
-        utterance.voice = voice;
-        utterance.lang = 'en-US';
-        utterance.pitch = msg.pitch;
-        utterance.rate = msg.rate;
-        utterance.volume = 1;
-        window.speechSynthesis.speak(utterance);
-      }, totalDelay);
-
-      totalDelay += (msg.text.split(" ").length / 10) * 500 + 300; // dynamic delay
-    });
-
-    // Remove highlight after last line
+  textSegments.forEach(segment => {
     setTimeout(() => {
-      lines.forEach(line => line.classList.remove('highlight'));
-    }, totalDelay + 500);
-  }
+      const utter = new SpeechSynthesisUtterance(segment.text);
+      utter.voice = voice;
+      utter.lang = 'en-US';
+      utter.pitch = segment.pitch;
+      utter.rate = segment.rate;
+      utter.volume = 1;
+      window.speechSynthesis.speak(utter);
+    }, delay);
 
-  if (speechSynthesis.onvoiceschanged !== undefined) {
-    speechSynthesis.onvoiceschanged = speakMessages;
-  } else {
-    speakMessages();
-  }
+    // Estimate time for each segment (approx. 0.5s per 10 words) + pause
+    delay += ((segment.text.split(" ").length / 10) * 500) + segment.pause;
+  });
 });
 </script>
