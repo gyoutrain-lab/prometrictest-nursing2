@@ -6,7 +6,6 @@
     line-height: 1.6;
     overflow: hidden;
     position: relative;
-    height: 300px;
   }
   .speech-line {
     display: block;
@@ -18,16 +17,6 @@
   }
   .word {
     transition: background 0.1s;
-  }
-  #controls {
-    text-align: center;
-    margin-top: 15px;
-  }
-  #controls button {
-    padding: 8px 16px;
-    margin: 0 5px;
-    font-size: 16px;
-    cursor: pointer;
   }
 </style>
 
@@ -43,22 +32,12 @@
   <span class="speech-line" data-text="and unlock the full test with a secure code today!"></span>
 </div>
 
-<div id="controls">
-  <button id="playBtn">Play</button>
-  <button id="pauseBtn">Pause</button>
-  <button id="restartBtn">Restart</button>
-</div>
-
 <script>
 window.addEventListener('DOMContentLoaded', () => {
   const container = document.getElementById('voiceTextContainer');
   const lines = Array.from(container.querySelectorAll('.speech-line'));
-  let timeoutIds = [];
-  let isPaused = false;
-  let currentLineIndex = 0;
-  let currentWordIndex = 0;
 
-  // Split text into word spans
+  // Split text into word spans for highlighting
   lines.forEach(line => {
     const text = line.dataset.text;
     line.innerHTML = '';
@@ -82,87 +61,56 @@ window.addEventListener('DOMContentLoaded', () => {
     { text: "and unlock the full test with a secure code today!", pitch: 1.2, rate: 1.1 }
   ];
 
-  let voices = [];
-  function initVoices() {
-    voices = window.speechSynthesis.getVoices();
+  function speakWordByWord() {
+    const voices = window.speechSynthesis.getVoices();
+    const voice = voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) || voices[0];
+
+    let delay = 0;
+
+    lines.forEach((line, i) => {
+      const words = Array.from(line.querySelectorAll('.word'));
+      let wordDelay = 0;
+
+      words.forEach((word, wIdx) => {
+        setTimeout(() => {
+          // Scroll container smoothly
+          const lineTop = line.offsetTop;
+          container.scrollTo({ top: lineTop - 20, behavior: 'smooth' });
+
+          // Highlight current word
+          words.forEach(w => w.classList.remove('highlight'));
+          word.classList.add('highlight');
+
+          // Speak the word
+          const utter = new SpeechSynthesisUtterance(word.textContent.trim());
+          utter.voice = voice;
+          utter.lang = 'en-US';
+          // Small variations to pitch/rate for emphasis words
+          if(word.textContent.trim() === "500" || word.textContent.trim() === "free") {
+            utter.pitch = 1.5;
+            utter.rate = 0.9;
+          } else {
+            utter.pitch = messages[i].pitch;
+            utter.rate = messages[i].rate;
+          }
+          utter.volume = 1;
+          window.speechSynthesis.speak(utter);
+
+        }, delay + wordDelay);
+
+        // Estimate delay per word (~0.35s)
+        wordDelay += 350;
+      });
+
+      // Add delay after line for next line
+      delay += words.length * 350 + 200;
+    });
   }
 
   if (speechSynthesis.onvoiceschanged !== undefined) {
-    speechSynthesis.onvoiceschanged = initVoices;
+    speechSynthesis.onvoiceschanged = speakWordByWord;
   } else {
-    initVoices();
+    speakWordByWord();
   }
-
-  function speakWord(lineIdx, wordIdx) {
-    if (isPaused) return;
-    if (lineIdx >= lines.length) return;
-
-    const line = lines[lineIdx];
-    const words = Array.from(line.querySelectorAll('.word'));
-    if (wordIdx >= words.length) {
-      currentLineIndex++;
-      currentWordIndex = 0;
-      speakWord(currentLineIndex, currentWordIndex);
-      return;
-    }
-
-    // Highlight current word
-    words.forEach(w => w.classList.remove('highlight'));
-    words[wordIdx].classList.add('highlight');
-
-    // Scroll container
-    container.scrollTo({ top: line.offsetTop - 20, behavior: 'smooth' });
-
-    // Speak word
-    const utter = new SpeechSynthesisUtterance(words[wordIdx].textContent.trim());
-    const msg = messages[lineIdx];
-    utter.voice = voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) || voices[0];
-    utter.lang = 'en-US';
-    utter.pitch = (words[wordIdx].textContent.trim() === "500" || words[wordIdx].textContent.trim() === "free") ? 1.5 : msg.pitch;
-    utter.rate = (words[wordIdx].textContent.trim() === "500" || words[wordIdx].textContent.trim() === "free") ? 0.9 : msg.rate;
-    utter.volume = 1;
-    window.speechSynthesis.speak(utter);
-
-    // Schedule next word
-    const delay = 350; // approx per word
-    const id = setTimeout(() => {
-      currentWordIndex++;
-      speakWord(currentLineIndex, currentWordIndex);
-    }, delay);
-    timeoutIds.push(id);
-  }
-
-  function playVoice() {
-    if (!isPaused) return;
-    isPaused = false;
-    speakWord(currentLineIndex, currentWordIndex);
-  }
-
-  function pauseVoice() {
-    isPaused = true;
-    window.speechSynthesis.cancel();
-    timeoutIds.forEach(id => clearTimeout(id));
-    timeoutIds = [];
-  }
-
-  function restartVoice() {
-    pauseVoice();
-    lines.forEach(line => line.querySelectorAll('.word').forEach(w => w.classList.remove('highlight')));
-    currentLineIndex = 0;
-    currentWordIndex = 0;
-    isPaused = false;
-    speakWord(currentLineIndex, currentWordIndex);
-  }
-
-  // Controls
-  document.getElementById('playBtn').addEventListener('click', () => {
-    if (window.speechSynthesis.speaking) return; // already speaking
-    speakWord(currentLineIndex, currentWordIndex);
-  });
-  document.getElementById('pauseBtn').addEventListener('click', pauseVoice);
-  document.getElementById('restartBtn').addEventListener('click', restartVoice);
-
-  // Auto-start
-  speakWord(currentLineIndex, currentWordIndex);
 });
 </script>
