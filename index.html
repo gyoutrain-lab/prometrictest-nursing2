@@ -1,53 +1,31 @@
 <style>
-  #voiceTextContainer {
-    max-width: 700px;
-    margin: 20px auto;
-    font-size: 20px;
-    line-height: 1.6;
-    overflow: hidden;
-    position: relative;
-  }
+  /* Basic styles for highlighting */
   .speech-line {
     display: block;
     margin-bottom: 10px;
+    transition: background 0.3s;
+    padding: 2px 5px;
   }
   .highlight {
-    background-color: #ffff99;
-    transition: background 0.2s;
-  }
-  .word {
-    transition: background 0.1s;
+    background-color: #ffff99; /* yellow highlight */
   }
 </style>
 
 <div id="voiceTextContainer">
-  <span class="speech-line" data-text="Want to ace your Nursing exams?"></span>
-  <span class="speech-line" data-text="The Nursing Prometric Test is a simulation exam for Nurse Technicians and Nurse Specialists."></span>
-  <span class="speech-line" data-text="It contains"></span>
-  <span class="speech-line" data-text="500"></span>
-  <span class="speech-line" data-text="questions based on the SMLE and Enclex exams, divided into Easy, Medium, and Hard levels."></span>
-  <span class="speech-line" data-text="Each question comes with a detailed rationale to help you understand, learn, and improve your score."></span>
-  <span class="speech-line" data-text="Take the demo test for"></span>
-  <span class="speech-line" data-text="free"></span>
-  <span class="speech-line" data-text="and unlock the full test with a secure code today!"></span>
+  <span class="speech-line">Want to ace your Nursing exams?</span>
+  <span class="speech-line">The Nursing Prometric Test is a simulation exam for Nurse Technicians and Nurse Specialists.</span>
+  <span class="speech-line">It contains</span>
+  <span class="speech-line">500</span>
+  <span class="speech-line">questions based on the SMLE and Enclex exams, divided into Easy, Medium, and Hard levels.</span>
+  <span class="speech-line">Each question comes with a detailed rationale to help you understand, learn, and improve your score.</span>
+  <span class="speech-line">Take the demo test for</span>
+  <span class="speech-line">free</span>
+  <span class="speech-line">and unlock the full test with a secure code today!</span>
 </div>
 
 <script>
 window.addEventListener('DOMContentLoaded', () => {
-  const container = document.getElementById('voiceTextContainer');
-  const lines = Array.from(container.querySelectorAll('.speech-line'));
-
-  // Split text into word spans for highlighting
-  lines.forEach(line => {
-    const text = line.dataset.text;
-    line.innerHTML = '';
-    text.split(' ').forEach(word => {
-      const span = document.createElement('span');
-      span.className = 'word';
-      span.textContent = word + ' ';
-      line.appendChild(span);
-    });
-  });
+  const lines = document.querySelectorAll('#voiceTextContainer .speech-line');
 
   const messages = [
     { text: "Want to ace your Nursing exams?", pitch: 1.2, rate: 1 },
@@ -61,56 +39,40 @@ window.addEventListener('DOMContentLoaded', () => {
     { text: "and unlock the full test with a secure code today!", pitch: 1.2, rate: 1.1 }
   ];
 
-  function speakWordByWord() {
+  function speakMessages() {
     const voices = window.speechSynthesis.getVoices();
     const voice = voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) || voices[0];
 
-    let delay = 0;
+    let totalDelay = 0;
 
-    lines.forEach((line, i) => {
-      const words = Array.from(line.querySelectorAll('.word'));
-      let wordDelay = 0;
+    messages.forEach((msg, index) => {
+      setTimeout(() => {
+        // Highlight the current line
+        lines.forEach(line => line.classList.remove('highlight'));
+        lines[index].classList.add('highlight');
 
-      words.forEach((word, wIdx) => {
-        setTimeout(() => {
-          // Scroll container smoothly
-          const lineTop = line.offsetTop;
-          container.scrollTo({ top: lineTop - 20, behavior: 'smooth' });
+        const utterance = new SpeechSynthesisUtterance(msg.text);
+        utterance.voice = voice;
+        utterance.lang = 'en-US';
+        utterance.pitch = msg.pitch;
+        utterance.rate = msg.rate;
+        utterance.volume = 1;
+        window.speechSynthesis.speak(utterance);
+      }, totalDelay);
 
-          // Highlight current word
-          words.forEach(w => w.classList.remove('highlight'));
-          word.classList.add('highlight');
-
-          // Speak the word
-          const utter = new SpeechSynthesisUtterance(word.textContent.trim());
-          utter.voice = voice;
-          utter.lang = 'en-US';
-          // Small variations to pitch/rate for emphasis words
-          if(word.textContent.trim() === "500" || word.textContent.trim() === "free") {
-            utter.pitch = 1.5;
-            utter.rate = 0.9;
-          } else {
-            utter.pitch = messages[i].pitch;
-            utter.rate = messages[i].rate;
-          }
-          utter.volume = 1;
-          window.speechSynthesis.speak(utter);
-
-        }, delay + wordDelay);
-
-        // Estimate delay per word (~0.35s)
-        wordDelay += 350;
-      });
-
-      // Add delay after line for next line
-      delay += words.length * 350 + 200;
+      totalDelay += (msg.text.split(" ").length / 10) * 500 + 300; // dynamic delay
     });
+
+    // Remove highlight after last line
+    setTimeout(() => {
+      lines.forEach(line => line.classList.remove('highlight'));
+    }, totalDelay + 500);
   }
 
   if (speechSynthesis.onvoiceschanged !== undefined) {
-    speechSynthesis.onvoiceschanged = speakWordByWord;
+    speechSynthesis.onvoiceschanged = speakMessages;
   } else {
-    speakWordByWord();
+    speakMessages();
   }
 });
 </script>
