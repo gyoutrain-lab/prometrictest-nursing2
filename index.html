@@ -1,33 +1,50 @@
 <script>
-document.addEventListener('click', startVoice, { once: true });
-function startVoice() {
+(function() {
+  // The text segments for the voiceover
   const textSegments = [
-    { text: "🩺 Want to ace your Nursing exams?", pause: 500, pitch: 1.2, rate: 1 },
-    { text: "The Nursing Prometric Test is a simulation exam for Nurse Technicians and Nurse Specialists.", pause: 500, pitch: 1, rate: 1 },
-    { text: "It contains", pause: 100, pitch: 1.1, rate: 1.1 },
-    { text: "500", pause: 100, pitch: 1.5, rate: 0.9 },
-    { text: "questions based on the SMLE and Enclex exams, divided into Easy, Medium, and Hard levels.", pause: 500, pitch: 1.1, rate: 1.1 },
-    { text: "Each question comes with a detailed rationale to help you understand, learn, and improve your score.", pause: 500, pitch: 1, rate: 1 },
-    { text: "Take the demo test for", pause: 100, pitch: 1.2, rate: 1.1 },
-    { text: "free", pause: 100, pitch: 1.5, rate: 0.9 },
-    { text: "and unlock the full test with a secure code today! 🩺📚", pause: 0, pitch: 1.2, rate: 1.1 }
+    "🩺 Want to ace your Nursing exams?",
+    "The Nursing Prometric Test is a simulation exam for Nurse Technicians and Nurse Specialists.",
+    "It contains 500 questions based on the SMLE and Enclex exams, divided into Easy, Medium, and Hard levels.",
+    "Each question comes with a detailed rationale to help you understand, learn, and improve your score.",
+    "Take the demo test for free, and unlock the full test with a secure code today! 🩺📚"
   ];
 
-  const voices = speechSynthesis.getVoices();
-  const voice = voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) || voices[0];
+  // Function to speak all segments in sequence
+  function speakSegments() {
+    const voices = speechSynthesis.getVoices();
+    const voice = voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) || voices[0];
+    let delay = 0;
 
-  let delay = 0;
-  textSegments.forEach(segment => {
-    setTimeout(() => {
-      const utter = new SpeechSynthesisUtterance(segment.text);
-      utter.voice = voice;
-      utter.lang = 'en-US';
-      utter.pitch = segment.pitch;
-      utter.rate = segment.rate;
-      utter.volume = 1;
-      speechSynthesis.speak(utter);
-    }, delay);
-    delay += ((segment.text.split(" ").length / 10) * 500) + segment.pause;
-  });
-}
+    textSegments.forEach(segment => {
+      setTimeout(() => {
+        const utter = new SpeechSynthesisUtterance(segment);
+        utter.voice = voice;
+        utter.lang = 'en-US';
+        // Optional emphasis for "500" or "free"
+        if(segment.includes("500") || segment.includes("free")) {
+          utter.pitch = 1.5;
+          utter.rate = 0.9;
+        } else {
+          utter.pitch = 1.2;
+          utter.rate = 1;
+        }
+        utter.volume = 1;
+        speechSynthesis.speak(utter);
+      }, delay);
+
+      // Estimate speaking time: ~0.5s per 10 words + small pause
+      delay += (segment.split(" ").length / 10) * 500 + 500;
+    });
+  }
+
+  // Trigger voice on first user interaction (click or scroll)
+  function triggerVoiceOnce() {
+    speakSegments();
+    document.removeEventListener('click', triggerVoiceOnce);
+    document.removeEventListener('scroll', triggerVoiceOnce);
+  }
+
+  document.addEventListener('click', triggerVoiceOnce);
+  document.addEventListener('scroll', triggerVoiceOnce);
+})();
 </script>
