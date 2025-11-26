@@ -1,3 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Nursing Prometric — Landing</title>
+<style>
+  /* KEEP PAGE PRESENTATION MINIMAL — do not change your existing visual style */
+  html,body{margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;background:#f7f9fc;color:#111}
+  .wrap{max-width:900px;margin:24px auto;padding:16px}
+  h1,h2{margin:8px 0}
+  .card{background:#fff;border-radius:8px;padding:16px;box-shadow:0 6px 18px rgba(0,0,0,0.04)}
+  .form-row{margin-bottom:10px}
+  input[type="text"]{width:100%;padding:10px;border-radius:6px;border:1px solid #ccc;box-sizing:border-box}
+  button{cursor:pointer;padding:10px 16px;border-radius:8px;border:0;background:#0b79d0;color:#fff}
+  .muted{color:#666;font-size:0.95rem}
+  footer{margin-top:18px;color:red;text-align:center}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="card" id="hero">
+    <h1>Prometric Nursing Test — Demo</h1>
+    <p class="muted">Try a demo; request unlock for the full test (500 Qs, rationale included).</p>
+  </div>
+
+  <!-- Registration / Confirmation -->
+  <div class="card" id="registrationCard" style="margin-top:16px;">
+    <h2>Confirmation</h2>
+    <div class="form-row">
+      <label for="regName">Name</label><br>
+      <input id="regName" type="text" placeholder="Your full name" />
+    </div>
+    <div class="form-row">
+      <label for="regWA">WhatsApp (WA) — number only (e.g. 6281234567890)</label><br>
+      <input id="regWA" type="text" placeholder="e.g. 6281234567890 (no +)" />
+    </div>
+    <div class="form-row">
+      <button id="confirmBtn" onclick="submitConfirmation()">Confirm & Request Unlock</button>
+    </div>
+    <p id="confirmMessage" class="muted"></p>
+    <footer>Prepared by: <b>Giyono Asfarrasyid, ETK Yogyakarta</b></footer>
+  </div>
+
+  <!-- Unlock -->
+  <div class="card hidden" id="unlockCard" style="margin-top:16px;">
+    <h2>Enter Unlock Code</h2>
+    <div class="form-row">
+      <input id="unlockInput" type="text" placeholder="Unlock code here" />
+    </div>
+    <div class="form-row">
+      <button onclick="verifyCode()">Unlock</button>
+    </div>
+    <p id="unlockMessage" class="muted"></p>
+    <footer>Prepared by: <b>Giyono Asfarrasyid, ETK Yogyakarta</b></footer>
+  </div>
+
+  <!-- Small demo info -->
+  <div class="card" style="margin-top:16px;">
+    <h2>About this test</h2>
+    <p class="muted">If you confirm here, admin will receive a notification and will send the unlock code via WhatsApp after confirming payment (QR IDR 50k).</p>
+  </div>
+
+  <footer style="margin-top:18px">Prepared by: <b>Giyono Asfarrasyid, ETK Yogyakarta</b></footer>
+</div>
+
+<!-- KEEP YOUR VOICEOVER SCRIPT EXACTLY AS-IS — UNCHANGED -->
 <script>
 (function() {
   // The text segments for the voiceover
@@ -48,3 +117,92 @@
   document.addEventListener('scroll', triggerVoiceOnce);
 })();
 </script>
+
+<!-- Integration JS: posts to backend, no UI/style changes, admin-only WA notification via backend -->
+<script>
+/* BACKEND URL (your provided working script) */
+const BACKEND_URL = "https://script.google.com/macros/s/AKfycbyid5gK909FatR784duasLwMLziKimFhLCRgJRWZ-18Kgy03xbJQRyNJGN1khUlweGS/exec";
+
+/* Local state */
+let __regName = "";
+let __regWA = "";
+let __unlockCode = "";
+
+/* Submit confirmation -> register user */
+function submitConfirmation() {
+  const name = document.getElementById('regName').value.trim();
+  const wa = document.getElementById('regWA').value.trim();
+
+  if (!name || !wa) {
+    document.getElementById('confirmMessage').innerText = "Please fill both name and WA number.";
+    return;
+  }
+
+  document.getElementById('confirmMessage').innerText = "Submitting...";
+
+  const payload = {
+    action: "register",
+    name: name,
+    wa: wa
+  };
+
+  fetch(BACKEND_URL, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  })
+  .then(res => res.json().catch(() => ({})))
+  .then(data => {
+    // We assume backend will append to Permission sheet, generate unlock code, and notify admin.
+    __regName = name;
+    __regWA = wa;
+
+    document.getElementById('confirmMessage').innerText = "Confirmation received. Admin has been notified. Please send payment proof (QR IDR 50k) to admin. Wait for unlock code via WA.";
+
+    // Show unlock card so student can enter code when admin sends it
+    setTimeout(() => {
+      document.getElementById('registrationCard').classList.add('hidden');
+      document.getElementById('unlockCard').classList.remove('hidden');
+    }, 900);
+  })
+  .catch(err => {
+    console.error('register error', err);
+    document.getElementById('confirmMessage').innerText = "Server error, please try again later.";
+  });
+}
+
+/* Verify unlock code */
+function verifyCode() {
+  const code = document.getElementById('unlockInput').value.trim();
+  if (!code) {
+    document.getElementById('unlockMessage').innerText = "Please enter unlock code.";
+    return;
+  }
+
+  document.getElementById('unlockMessage').innerText = "Validating...";
+
+  fetch(`${BACKEND_URL}?action=validate&code=${encodeURIComponent(code)}`)
+    .then(res => res.json().catch(()=>({})))
+    .then(data => {
+      // backend returns { status: "valid"/"invalid"/"used"/"unpaid", ... }
+      if (data && data.status === 'valid') {
+        __unlockCode = code;
+        document.getElementById('unlockMessage').innerText = "Code valid — opening test...";
+        // Redirect to your quiz landing (or show message). If you host test on another page, change location.
+        // For example, open quiz.html in same domain:
+        // window.location.href = "/quiz.html";
+      } else if (data && data.status === 'used') {
+        document.getElementById('unlockMessage').innerText = "Code already used.";
+      } else if (data && data.status === 'unpaid') {
+        document.getElementById('unlockMessage').innerText = "Payment not completed.";
+      } else {
+        document.getElementById('unlockMessage').innerText = "Invalid unlock code.";
+      }
+    })
+    .catch(err => {
+      console.error('validation error', err);
+      document.getElementById('unlockMessage').innerText = "Server error, try again.";
+    });
+}
+</script>
+</body>
+</html>
