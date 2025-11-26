@@ -121,7 +121,7 @@
 <!-- Integration JS: posts to backend, no UI/style changes, admin-only WA notification via backend -->
 <script>
 /* BACKEND URL (your provided working script) */
-const BACKEND_URL = "https://script.google.com/macros/s/AKfycbyid5gK909FatR784duasLwMLziKimFhLCRgJRWZ-18Kgy03xbJQRyNJGN1khUlweGS/exec";
+const BACKEND_URL = "https://script.google.com/macros/s/AKfycbwGjB5EIwD_5ADArYRkLEN4_1GE1hXrv7VsOPQCqFsiIZakVN6_IB0ZfE7p3pQaFopU/exec";
 
 /* Local state */
 let __regName = "";
@@ -180,7 +180,7 @@ function verifyCode() {
 
   document.getElementById('unlockMessage').innerText = "Validating...";
 
-  fetch(`${BACKEND_URL}?action=validate&code=${encodeURIComponent(code)}`)
+  fetch(`${https://script.google.com/macros/s/AKfycbwGjB5EIwD_5ADArYRkLEN4_1GE1hXrv7VsOPQCqFsiIZakVN6_IB0ZfE7p3pQaFopU/exec}?action=validate&code=${encodeURIComponent(code)}`)
     .then(res => res.json().catch(()=>({})))
     .then(data => {
       // backend returns { status: "valid"/"invalid"/"used"/"unpaid", ... }
